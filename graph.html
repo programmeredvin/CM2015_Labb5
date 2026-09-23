@@ -48,6 +48,8 @@
             subject: "Patient/" + PATIENT_ID,
             code: "http://loinc.org|8867-4",
             _sort: "-date",
+
+            _lastUpdated: "le" + new Date().toISOString()
         }
     })
 
