@@ -9,12 +9,13 @@
 </head>
 <body>
 
-    <div id="plot_area" style="width:1000px;height:350px;"></div>
+    <div id="plot_area" style="width:1000px;height:500px;"></div>
 
     <script src="https://cdn.plot.ly/plotly-3.1.0.min.js"></script>
     <script type="module">
 
       const PATIENT_ID = "17";
+      var latestTime = new Date()
 
       const client = jqFhir({
           baseUrl: "https://hapim.app.cloud.cbh.kth.se/fhir"
@@ -37,21 +38,31 @@
 
       Plotly.newPlot(plotly_elem, plotly_data, plotly_layout);
       */
+
       
-  function getMyHRData() {
+    function getMyHRData() {
 
-    console.log("Updating graph:", new Date());
+       
 
-    client.search({
-        type: "Observation",
-        query: {
-            subject: "Patient/" + PATIENT_ID,
-            code: "http://loinc.org|8867-4",
-            _sort: "-date",
+        console.log("Updating graph:", new Date());
+        
+        // Local midnight today
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
 
-            _lastUpdated: "le" + new Date().toISOString()
-        }
-    })
+        client.search({
+            type: "Observation",
+            query: {
+                subject: "Patient/" + PATIENT_ID,
+                code: "http://loinc.org|8867-4",
+                
+                date: "ge" + startOfToday.toISOString(),
+                _sort: "-date",
+                _count: 2000,
+
+                _lastUpdated: "le" + new Date().toISOString()
+            }
+        })
 
     .done(function(bundle) {
 
@@ -59,13 +70,8 @@
             .map(e => e.resource)
             .filter(o =>
                 o.effectiveDateTime &&
-                o.valueQuantity &&
-                new Date(o.effectiveDateTime).toDateString() === new Date().toDateString()
-            )
-            .sort((a, b) =>
-                new Date(a.effectiveDateTime) - new Date(b.effectiveDateTime)
+                o.valueQuantity
             );
-
 
         const times = observations.map(o =>
             new Date(o.effectiveDateTime)
@@ -76,11 +82,9 @@
         );
 
 
-        const latest =
-            values.length ? values[values.length - 1] : 0;
+        const latest = values.length ? values[0] : 0;
 
-        const previous =
-            values.length > 1 ? values[values.length - 2] : latest;
+        const previous = values.length > 1 ? values[1] : latest;
 
 
         Plotly.react(plotly_elem, [
@@ -93,16 +97,24 @@
                 name: "Heart rate"
             },
 
+            // the gauge
+            
+
             {
                 type: "indicator",
-                mode: "number+delta",
+                mode: "gauge+number+delta",
                 value: latest,
                 delta: {
                     reference: previous
                 },
-                title: {
-                    text: "Latest HR"
+
+                gauge: {
+                    axis: {
+                        range: [30, 200],
+                        visible: false
+                    }
                 },
+               
                 domain: {
                     x: [0.75, 1],
                     y: [0, 1]
