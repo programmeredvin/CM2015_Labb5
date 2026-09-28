@@ -46,13 +46,17 @@
 
   function handleBLENotifications(event)
     {
-      let result = "";
+      let result = ""; //Create empty string for the data
+
+      //Go through every byte that was recieved
       for (var i = 0; i < event.target.value.byteLength; i++) {
+          
+        //Bytes to char, characters added together
           result += String.fromCharCode(event.target.value.getUint8(i));
       }
-      
 
-      console.log(result);
+      console.log(result); //print message in chrome
+
       if (result.includes("BPM")) {
             const bpm = Number(
                 result.replace("BPM", "").trim()
@@ -60,10 +64,10 @@
 
             if (Number.isFinite(bpm)) {
 
-                latestHR = bpm;
-                latestHRTime = new Date().toISOString();
+                latestHR = bpm; //Save heartrate reading
+                latestHRTime = new Date().toISOString(); //Save the time of recieve
 
-                val.value = bpm;
+                val.value = bpm; //Update yellow box on the webpage
             }
         
         }
@@ -81,6 +85,7 @@
     }
 
     // Time when this observation is sent
+    // This is the time when sendHRValue runs
     const observationTime = new Date().toISOString();
 
     // Create FHIR Observation Resource
@@ -120,7 +125,7 @@
       },
 
       // Time when the observation is sent
-        effectiveDateTime: observationTime,
+        effectiveDateTime: observationTime, //look up
 
       // Actual heart rate measurement
       valueQuantity: {
